@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Blockode</title>
+<!-- Open this file directly in any browser (no server/build needed).
+     Edit files in src/css and src/js, then refresh.
+     Adding a new CSS/JS file? Add a line for it below (JS runs in the order listed). -->
+<link rel="stylesheet" href="src/css/01-base.css">
+<link rel="stylesheet" href="src/css/02-layout.css">
+<link rel="stylesheet" href="src/css/03-library.css">
+<link rel="stylesheet" href="src/css/04-script-tracks.css">
+<link rel="stylesheet" href="src/css/05-panels.css">
+<link rel="stylesheet" href="src/css/06-slots.css">
+<link rel="stylesheet" href="src/css/07-responsive.css">
+<link rel="stylesheet" href="src/css/08-art.css">
+<link rel="stylesheet" href="src/css/09-audio.css">
+</head>
+<body>
+
+<!-- TOP RIBBON -->
+<div id="topbar">
+  <div class="ribbon" id="ribbon">
+    <button type="button" class="rib" data-view="script" onclick="setView('script')">Script</button>
+    <button type="button" class="rib" data-view="scene" onclick="setView('scene')">Scene</button>
+    <button type="button" class="rib" data-view="split" onclick="setView('split')">Split</button>
+    <button type="button" class="rib" data-view="assets" onclick="setView('assets')">Assets</button>
+    <button type="button" class="rib" data-view="art" onclick="setView('art')">Art</button>
+    <button type="button" class="rib" data-view="audio" onclick="setView('audio')">Audio</button>
+    <button type="button" class="rib rib-act" id="rib-tree" onclick="toggleTreePanel()">Tree</button>
+    <button type="button" class="rib rib-act" id="rib-props" onclick="togglePropsPanel()">Props</button>
+    <button type="button" class="rib rib-act" onclick="toggleDebug()">Debug</button>
+  </div>
+  <div class="topbar-spacer"></div>
+  <span id="ribbon-label" class="ribbon-label"></span>
+  <button class="run-btn" id="run-btn" onclick="toggleRun()" data-tip="Run (F5)">
+    <svg viewBox="0 0 10 10"><polygon points="2,1 9,5 2,9"/></svg>Run
+  </button>
+  <button type="button" class="icon-btn overflow-btn" id="overflow-btn" data-tip="More" onclick="openOverflow(event)" aria-label="More">⋯</button>
+</div>
+
+<!-- Hidden tabs containers (kept for JS that fills them; visually replaced by ribbon) -->
+<div id="tabs-wrap" class="tabs-legacy" aria-hidden="true">
+  <div class="canvas-tabs" id="canvas-tabs"></div>
+  <div class="canvas-tabs" id="view-tabs"></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT SLOT: Scene Tree -->
+  <div id="left-slot">
+    <!-- SCENE PANEL -->
+    <div class="slot-panel" id="sp-scene">
+      <div class="slot-panel-head" id="sp-scene-head">
+        <span class="sp-drag">⠿</span>
+        <span class="sp-title">Scene Tree</span>
+        <button class="icon-btn sp-toggle" data-tip="New Scene" title="New Scene" onclick="openNewSceneModal();event.stopPropagation()">+</button>
+        <button class="icon-btn sp-toggle" data-tip="Add Node" title="Add Node" onclick="showAddMenu(event);event.stopPropagation()">⊕</button>
+        <button class="icon-btn sp-toggle" data-tip="Collapse All" title="Collapse All" onclick="toggleAll();event.stopPropagation()">⊟</button>
+        <button class="icon-btn sp-toggle" data-tip="Delete Node" title="Delete Node" onclick="deleteNode();event.stopPropagation()">⌫</button>
+        <button class="icon-btn sp-toggle" data-tip="Collapse panel" title="Collapse panel" onclick="toggleSlot('sp-scene');event.stopPropagation()" id="sp-scene-tog">▲</button>
+      </div>
+      <div class="slot-body" id="sp-scene-body">
+        <div class="search" id="tree-search-box"><span>⌕</span><input id="tree-search" placeholder="Search nodes…" autocomplete="off"/><button data-clear="tree-search">✕</button></div>
+        <div id="scene-tree"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUTTER: left resize -->
+  <div class="gutter" id="gut-left"></div>
+
+  <!-- CANVAS PANEL -->
+  <div id="canvas-panel">
+    <!-- SCRIPT PANE -->
+    <div id="script-pane">
+      <div id="canvas-target">No node selected</div>
+      <div id="canvas-area">
+        <!-- Block Library (searchable palette) -->
+        <div id="block-library" class="hidden">
+          <div class="bl-header">
+            <div class="bl-title"><span>▦</span> <span class="bl-title-text">Blocks</span>
+              <button type="button" class="bl-collapse" id="bl-collapse-btn" onclick="toggleBlockLibrary()" title="Collapse library">◀</button>
+            </div>
+            <div class="bl-search" id="bl-search-box">
+              <span>⌕</span>
+              <input id="block-search" placeholder="Search blocks…" autocomplete="off"/>
+              <button data-clear="block-search">✕</button>
+            </div>
+          </div>
+          <div class="bl-list" id="block-list"></div>
+          <div class="bl-hint">Click or drag onto a line</div>
+        </div>
+        <div id="script-workspace">
+          <div class="canvas-empty" id="canvas-empty">
+            <div class="canvas-empty-icon">◈</div>
+            <div class="canvas-empty-text">No scene open</div>
+            <div class="canvas-empty-hint">Create a scene or select a node</div>
+          </div>
+        </div>
+      </div>
+      <pre id="code-view"></pre>
+    </div>
+
+    <!-- PREVIEW GUTTER -->
+    <div class="gutter pv-gut" id="gut-pv"></div>
+
+    <!-- PREVIEW PANE -->
+    <div id="preview-pane">
+      <div id="preview-tools">
+        <button type="button" id="pt-pan" class="on" title="Pan (middle mouse or this tool)" onclick="setPreviewTool('pan')">✋</button>
+        <button type="button" id="pt-move" title="Move node" onclick="setPreviewTool('move')">✥</button>
+        <button type="button" id="pt-scale" title="Scale node" onclick="setPreviewTool('scale')">⤢</button>
+        <button type="button" id="pt-reset" title="Reset view" onclick="resetPreviewCam()">⊙</button>
+        <span id="preview-pos">x0 y0</span>
+      </div>
+      <canvas id="preview"></canvas>
+      <div id="hud"></div>
+    </div>
+
+    <!-- ASSETS PANE -->
+    <div id="assets-pane">
+      <div class="panel-toolbar"><span class="panel-toolbar-label">Assets</span>
+        <button class="btn btn-ghost sm" onclick="importPNG(false)">Import PNG…</button>
+        <button class="btn btn-ghost sm" onclick="importAudio(false)">Import Audio…</button>
+      </div>
+      <div class="search"><span>⌕</span><input id="asset-search" placeholder="Search assets…" autocomplete="off"/><button data-clear="asset-search">✕</button></div>
+      <div id="asset-grid"></div>
+    </div>
+    <input type="file" id="png-file" accept="image/png,image/*" multiple hidden>
+    <input type="file" id="audio-file" accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac,.webm" multiple hidden>
+
+    <!-- ART PANE -->
+    <div id="art-pane">
+      <aside id="art-side"></aside>
+      <div id="art-stage">
+        <div id="art-status"></div>
+        <div id="art-wrap"><svg id="art-svg" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      </div>
+    </div>
+
+    <!-- AUDIO PANE -->
+    <div id="audio-pane">
+      <div class="au-grid">
+        <section class="au-card" id="au-sfx">
+          <div class="au-top"><h2>Blip maker</h2><span class="au-tag" id="au-sinfo"></span></div>
+          <canvas id="au-sw" width="128" height="32"></canvas>
+          <div class="au-row"><button type="button" id="au-splay" class="au-play">Play</button><button type="button" id="au-sdice">Random</button></div>
+          <div class="au-seedbox"><span>Seed</span><input type="text" id="au-sseed" value="coin7" spellcheck="false" autocomplete="off" aria-label="Sound seed"></div>
+          <div class="au-ctl" id="au-sctl"></div>
+          <div class="au-actions">
+            <button type="button" id="au-ssave" class="au-dl">Download WAV</button>
+            <button type="button" id="au-sadd" class="au-add">＋ Add to Assets</button>
+          </div>
+        </section>
+        <section class="au-card" id="au-mus">
+          <div class="au-top"><h2>Loop maker</h2><span class="au-tag" id="au-minfo"></span></div>
+          <canvas id="au-mw" width="128" height="32"></canvas>
+          <div class="au-row"><button type="button" id="au-mplay" class="au-play">Play loop</button><button type="button" id="au-mdice">Random</button></div>
+          <div class="au-seedbox"><span>Seed</span><input type="text" id="au-mseed" value="moon42" spellcheck="false" autocomplete="off" aria-label="Music seed"></div>
+          <div class="au-ctl" id="au-mctl"></div>
+          <div class="au-actions">
+            <button type="button" id="au-msave" class="au-dl">Download WAV</button>
+            <button type="button" id="au-madd" class="au-add">＋ Add to Assets</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUTTER: right resize -->
+  <div class="gutter" id="gut-right"></div>
+
+  <!-- RIGHT SLOT: Properties + Script Properties -->
+  <div id="right-slot">
+    <div class="slot-panel" id="sp-props" style="--sh:45%">
+      <div class="slot-panel-head" id="sp-props-head">
+        <span class="sp-drag">⠿</span>
+        <span class="sp-title" id="inspector-title">Properties</span>
+        <button class="icon-btn sp-toggle" data-tip="Collapse panel" onclick="toggleSlot('sp-props');event.stopPropagation()" id="sp-props-tog">▲</button>
+      </div>
+      <div class="slot-body" id="sp-props-body" style="overflow-y:auto">
+        <div id="inspector-body">
+          <div style="padding:16px 10px;color:var(--text-muted);font-size:12px;text-align:center">Select a node</div>
+        </div>
+      </div>
+    </div>
+    <!-- Vertical resize grip between Properties and Script Properties -->
+    <div class="slot-resize-grip" id="right-slot-grip" title="Drag to resize panels (double-click for 50/50)"></div>
+    <div class="slot-panel" id="sp-scriptprops">
+      <div class="slot-panel-head" id="sp-scriptprops-head">
+        <span class="sp-drag">⠿</span>
+        <span class="sp-title" id="scriptprops-title">Script Properties</span>
+        <button class="icon-btn sp-toggle" data-tip="Collapse panel" onclick="toggleSlot('sp-scriptprops');event.stopPropagation()" id="sp-scriptprops-tog">▲</button>
+      </div>
+      <div class="slot-body" id="sp-scriptprops-body" style="overflow-y:auto">
+        <div id="scriptprops-body">
+          <div style="padding:16px 10px;color:var(--text-muted);font-size:12px;text-align:center">Select a script block</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MOBILE BOTTOM BAR + SCRIM -->
+<div id="overlay-scrim" onclick="closeMobilePanels()"></div>
+<div id="mobile-bar" class="mobile-only" style="display:none!important" hidden>
+  <button type="button" onclick="toggleMobilePanel('left')" id="mob-left"><span>☰</span>Tree</button>
+  <button type="button" onclick="setView('script')" id="mob-script"><span>⌗</span>Script</button>
+  <button type="button" onclick="setView('scene')" id="mob-scene"><span>▣</span>View</button>
+  <button type="button" onclick="setView('assets')" id="mob-assets"><span>▨</span>Assets</button>
+  <button type="button" onclick="toggleMobilePanel('right')" id="mob-right"><span>⚙</span>Props</button>
+</div>
+
+<!-- DEBUG PANEL (center bottom) -->
+<div id="debug-panel">
+  <div id="dbg-head">
+    <button class="icon-btn" id="dbg-toggle" onclick="toggleDebug()" data-tip="Toggle debug (Ctrl+J)">▲</button>
+    <b>Debug</b>
+    <span id="dbg-stats"></span>
+    <span style="flex:1"></span>
+    <span id="dbg-live" style="color:var(--accent-yellow);font-size:10px"></span>
+    <label class="vt-loop"><input type="checkbox" id="dbg-logs-only" onchange="renderDebug()"> Logs only</label>
+    <button class="icon-btn" onclick="DBG.length=0;renderDebug()" data-tip="Clear">⌫</button>
+  </div>
+  <div id="dbg-body"></div>
+</div>
+
+<!-- OVERLAYS -->
+<div id="ctx-menu"></div>
+<div id="global-tip" role="tooltip"></div>
+<div id="toast"></div>
+<div id="settings-overlay"></div>
+<input type="file" id="proj-file" accept=".json,application/json" hidden>
+
+<!-- NEW SCENE MODAL -->
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">New Scene</div>
+    <div class="modal-field">
+      <label>Scene Name</label>
+      <input id="scene-name-input" type="text" value="MainScene" placeholder="e.g. MainScene"/>
+    </div>
+    <div class="modal-field">
+      <label>Root Node</label>
+      <select id="scene-root-select">
+        <option value="Node2D">Node2D</option>
+        <option value="Sprite2D">Sprite2D</option>
+        <option value="Control">Control</option>
+        <option value="CharacterBody2D">CharacterBody2D</option>
+        <option value="TileMapLayer">TileMapLayer</option>
+        <option value="Camera2D">Camera2D</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmNewScene()">Create</button>
+    </div>
+  </div>
+</div>
+
+<script src="src/js/core/state.js"></script>
+<script src="src/js/core/block-defs.js"></script>
+<script src="src/js/core/utils.js"></script>
+<script src="src/js/ui/slots.js"></script>
+<script src="src/js/scene/scenes.js"></script>
+<script src="src/js/scene/tree.js"></script>
+<script src="src/js/ui/tabs.js"></script>
+<script src="src/js/editor/blocks/model.js"></script>
+<script src="src/js/library/blocks.js"></script>
+<script src="src/js/editor/blocks/inspector.js"></script>
+<script src="src/js/editor/blocks/tracks.js"></script>
+<script src="src/js/editor/blocks/canvas.js"></script>
+<script src="src/js/ui/inspector.js"></script>
+<script src="src/js/library/assets.js"></script>
+<script src="src/js/ui/search.js"></script>
+<script src="src/js/ui/context-menu.js"></script>
+<script src="src/js/ui/modal.js"></script>
+<script src="src/js/ui/code-view.js"></script>
+<script src="src/js/runtime/engine.js"></script>
+<script src="src/js/runtime/preview.js"></script>
+<script src="src/js/ui/debug.js"></script>
+<script src="src/js/ui/settings.js"></script>
+<script src="src/js/input/keybinds.js"></script>
+<script src="src/js/input/input.js"></script>
+<script src="src/js/ui/menus.js"></script>
+<script src="src/js/ui/gutters.js"></script>
+<script src="src/js/project/undo.js"></script>
+<script src="src/js/project/save-open.js"></script>
+<script src="src/js/project/drop-files.js"></script>
+<script src="src/js/ui/mobile.js"></script>
+<script src="src/js/art/art-state.js"></script>
+<script src="src/js/art/art-tools.js"></script>
+<script src="src/js/art/art-view.js"></script>
+<script src="src/js/art/art-export.js"></script>
+<script src="src/js/audio/audio-core.js"></script>
+<script src="src/js/audio/audio-sfx.js"></script>
+<script src="src/js/audio/audio-music.js"></script>
+<script src="src/js/audio/audio-view.js"></script>
+<script src="src/js/init.js"></script>
+</body>
+</html>
