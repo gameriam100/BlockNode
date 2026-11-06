@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Blockode</title>
+<!-- Blockode V29 reference UI. Served by the Go application. The editor uses its same-origin local API.
+     Edit files in src/css and src/js, then restart/refresh Blockode.
+     Adding a new CSS/JS file? Add a line for it below (JS runs in the order listed). -->
+<link rel="stylesheet" href="src/css/01-base.css">
+<link rel="stylesheet" href="src/css/02-layout.css">
+<link rel="stylesheet" href="src/css/03-library.css">
+<link rel="stylesheet" href="src/css/04-script-tracks.css">
+<link rel="stylesheet" href="src/css/05-panels.css">
+<link rel="stylesheet" href="src/css/06-slots.css">
+<link rel="stylesheet" href="src/css/07-responsive.css">
+<link rel="stylesheet" href="src/css/08-art.css">
+<link rel="stylesheet" href="src/css/09-audio.css">
+</head>
+<body>
+
+<!-- TOP RIBBON -->
+<div id="topbar">
+  <div class="ribbon" id="ribbon">
+    <button type="button" class="rib" data-view="script" data-tip="Script"><span class="rib-ico">⌗</span></button>
+    <button type="button" class="rib" data-view="scene" data-tip="Scene"><span class="rib-ico">▣</span></button>
+    <button type="button" class="rib" data-view="split" data-tip="Split"><span class="rib-ico">⧉</span></button>
+    <button type="button" class="rib" data-view="assets" data-tip="Assets"><span class="rib-ico">▨</span></button>
+    <button type="button" class="rib" data-view="art" data-tip="Art"><span class="rib-ico">✎</span></button>
+    <button type="button" class="rib" data-view="audio" data-tip="Audio"><span class="rib-ico">🔊</span></button>
+    <button type="button" class="rib rib-act" id="rib-tree" data-tip="Tree"><span class="rib-ico">☰</span></button>
+    <button type="button" class="rib rib-act" id="rib-props" data-tip="Properties"><span class="rib-ico">⚙</span></button>
+    <button type="button" class="rib rib-act" id="rib-debug" data-tip="Debug"><span class="rib-ico">☰</span></button>
+  </div>
+  <div class="topbar-spacer"></div>
+  <span id="project-path" class="project-path" title="Project storage">💾 loading local project</span>
+  <span id="mem-meter" class="mem-meter" title="Memory pressure">Mem</span>
+  <span id="ribbon-label" class="ribbon-label"></span>
+  <button class="run-btn" id="run-btn" data-tip="Run (F5)">
+    <svg viewBox="0 0 10 10"><polygon points="2,1 9,5 2,9"/></svg>Run
+  </button>
+  <button type="button" class="icon-btn overflow-btn" id="overflow-btn" data-tip="More" aria-label="More">⋯</button>
+</div>
+
+<!-- Hidden tabs containers (kept for JS that fills them; visually replaced by ribbon) -->
+<div id="tabs-wrap" class="tabs-legacy" aria-hidden="true">
+  <div class="canvas-tabs" id="canvas-tabs"></div>
+  <div class="canvas-tabs" id="view-tabs"></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT SLOT: Scenes + Scene Tree -->
+  <div id="left-slot">
+    <div class="slot-panel" id="sp-scene">
+      <div class="slot-panel-head" id="sp-scene-head" style="min-height:calc(var(--topbar-h,46px) * 0.9);padding-top:6px;padding-bottom:6px">
+        <span class="sp-drag">⠿</span>
+        <div class="left-section-tabs">
+          <button type="button" class="left-tab on" id="tab-scenes" data-left="scenes">Scenes</button>
+          <button type="button" class="left-tab" id="tab-tree" data-left="tree">Tree</button>
+        </div>
+        <button class="icon-btn sp-toggle" id="btn-new-scene" data-tip="New Scene" title="New Scene">+</button>
+        <button class="icon-btn sp-toggle" id="btn-add-node" data-tip="Add Node" title="Add Node">⊕</button>
+        <button class="icon-btn sp-toggle" id="btn-collapse-all" data-tip="Collapse All" title="Collapse All">⊟</button>
+        <button class="icon-btn sp-toggle" id="btn-delete-node" data-tip="Delete Node" title="Delete Node">⌫</button>
+        <button class="icon-btn sp-toggle" data-tip="Collapse panel" title="Collapse panel" id="sp-scene-tog">▲</button>
+      </div>
+      <div class="slot-body" id="sp-scene-body">
+        <!-- SCENES LIST SECTION -->
+        <div id="scenes-section">
+          <div class="search" id="scenes-search-box"><span>⌕</span><input id="scenes-search" placeholder="Search scenes…" autocomplete="off"/><button data-clear="scenes-search">✕</button></div>
+          <div id="scenes-list"></div>
+          <div class="scenes-actions">
+            <button type="button" class="scenes-act-btn" id="btn-create-scene">＋ Create Scene</button>
+            <button type="button" class="scenes-act-btn danger" id="btn-delete-scene">Delete Scene</button>
+          </div>
+        </div>
+        <!-- NODE TREE SECTION (current scene only) -->
+        <div id="tree-section" class="hidden">
+          <div class="search" id="tree-search-box"><span>⌕</span><input id="tree-search" placeholder="Search nodes…" autocomplete="off"/><button data-clear="tree-search">✕</button></div>
+          <div id="scene-tree"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUTTER: left resize -->
+  <div class="gutter" id="gut-left"></div>
+
+  <!-- CANVAS PANEL -->
+  <div id="canvas-panel">
+    <!-- SCRIPT PANE -->
+    <div id="script-pane">
+      <div id="canvas-target">No node selected</div>
+      <div id="canvas-area">
+        <!-- Block Library (searchable palette) -->
+        <div id="block-library" class="hidden">
+          <div class="bl-header">
+            <div class="bl-title"><span>▦</span> <span class="bl-title-text">Blocks</span>
+              <button type="button" class="bl-collapse" id="bl-collapse-btn" title="Collapse library">◀</button>
+            </div>
+            <div class="bl-search" id="bl-search-box">
+              <span>⌕</span>
+              <input id="block-search" placeholder="Search blocks…" autocomplete="off"/>
+              <button data-clear="block-search">✕</button>
+            </div>
+          </div>
+          <div class="bl-list" id="block-list"></div>
+          <div class="bl-hint">Click or drag onto a line</div>
+        </div>
+        <div id="script-workspace">
+          <div class="canvas-empty" id="canvas-empty">
+            <div class="canvas-empty-icon">◈</div>
+            <div class="canvas-empty-text">No scene open</div>
+            <div class="canvas-empty-hint">Create a scene or select a node</div>
+          </div>
+        </div>
+      </div>
+      <pre id="code-view"></pre>
+    </div>
+
+    <!-- PREVIEW GUTTER -->
+    <div class="gutter pv-gut" id="gut-pv"></div>
+
+    <!-- PREVIEW PANE -->
+    <div id="preview-pane">
+      <div id="preview-tools">
+        <button type="button" id="pt-pan" class="on" title="Pan (middle mouse or this tool)">✋</button>
+        <button type="button" id="pt-move" title="Move node">✥</button>
+        <button type="button" id="pt-scale" title="Scale node">⤢</button>
+        <button type="button" id="pt-reset" title="Reset view">⊙</button>
+        <span id="preview-pos">x0 y0</span>
+      </div>
+      <canvas id="preview"></canvas>
+      <div id="hud"></div>
+    </div>
+
+    <!-- ASSETS PANE -->
+    <div id="assets-pane">
+      <div class="panel-toolbar"><span class="panel-toolbar-label">Assets</span>
+        <button class="btn btn-ghost sm" id="btn-import-png">Import PNG…</button>
+        <button class="btn btn-ghost sm" id="btn-import-audio">Import Audio…</button>
+      </div>
+      <div class="search"><span>⌕</span><input id="asset-search" placeholder="Search assets…" autocomplete="off"/><button data-clear="asset-search">✕</button></div>
+      <div id="asset-grid"></div>
+    </div>
+    <input type="file" id="png-file" accept="image/png,image/*" multiple hidden>
+    <input type="file" id="audio-file" accept="audio/*,.wav,.mp3,.ogg,.m4a,.flac,.webm" multiple hidden>
+
+    <!-- ART PANE -->
+    <div id="art-pane">
+      <aside id="art-side"></aside>
+      <div id="art-stage">
+        <div id="art-status"></div>
+        <div id="art-wrap"><svg id="art-svg" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      </div>
+    </div>
+
+    <!-- AUDIO PANE -->
+    <div id="audio-pane">
+      <div class="au-grid">
+        <section class="au-card" id="au-sfx">
+          <div class="au-top"><h2>Blip maker</h2><span class="au-tag" id="au-sinfo"></span></div>
+          <canvas id="au-sw" width="128" height="32"></canvas>
+          <div class="au-row"><button type="button" id="au-splay" class="au-play">Play</button><button type="button" id="au-sdice">Random</button></div>
+          <div class="au-seedbox"><span>Seed</span><input type="text" id="au-sseed" value="coin7" spellcheck="false" autocomplete="off" aria-label="Sound seed"></div>
+          <div class="au-ctl" id="au-sctl"></div>
+          <div class="au-actions">
+            <button type="button" id="au-ssave" class="au-dl">Download WAV</button>
+            <button type="button" id="au-sadd" class="au-add">＋ Add to Assets</button>
+          </div>
+        </section>
+        <section class="au-card" id="au-mus">
+          <div class="au-top"><h2>Loop maker</h2><span class="au-tag" id="au-minfo"></span></div>
+          <canvas id="au-mw" width="128" height="32"></canvas>
+          <div class="au-row"><button type="button" id="au-mplay" class="au-play">Play loop</button><button type="button" id="au-mdice">Random</button>
+            <label class="au-keep-loop" title="Keep music looping after leaving the Audio tab"><input type="checkbox" id="au-mkeep" /> Keep looping when closed</label></div>
+          <div class="au-seedbox"><span>Seed</span><input type="text" id="au-mseed" value="moon42" spellcheck="false" autocomplete="off" aria-label="Music seed"></div>
+          <div class="au-ctl" id="au-mctl"></div>
+          <div class="au-actions">
+            <button type="button" id="au-msave" class="au-dl">Download WAV</button>
+            <button type="button" id="au-madd" class="au-add">＋ Add to Assets</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUTTER: right resize -->
+  <div class="gutter" id="gut-right"></div>
+
+  <!-- RIGHT SLOT: Properties + Script Properties -->
+  <div id="right-slot">
+    <div class="slot-panel" id="sp-props" style="--sh:45%">
+      <div class="slot-panel-head" id="sp-props-head">
+        <span class="sp-drag">⠿</span>
+        <span class="sp-title" id="inspector-title">Properties</span>
+        <button class="icon-btn sp-toggle" data-tip="Collapse panel" id="sp-props-tog">▲</button>
+      </div>
+      <div class="slot-body" id="sp-props-body" style="overflow-y:auto">
+        <div id="inspector-body">
+          <div style="padding:16px 10px;color:var(--text-muted);font-size:12px;text-align:center">Select a node</div>
+        </div>
+      </div>
+    </div>
+    <!-- Vertical resize grip between Properties and Script Properties -->
+    <div class="slot-resize-grip" id="right-slot-grip" title="Drag to resize panels (double-click for 50/50)"></div>
+    <div class="slot-panel" id="sp-scriptprops">
+      <div class="slot-panel-head" id="sp-scriptprops-head">
+        <span class="sp-drag">⠿</span>
+        <span class="sp-title" id="scriptprops-title">Script Properties</span>
+        <button class="icon-btn sp-toggle" data-tip="Collapse panel" id="sp-scriptprops-tog">▲</button>
+      </div>
+      <div class="slot-body" id="sp-scriptprops-body" style="overflow-y:auto">
+        <div id="scriptprops-body">
+          <div style="padding:16px 10px;color:var(--text-muted);font-size:12px;text-align:center">Select a script block</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MOBILE BOTTOM BAR + SCRIM -->
+<div id="overlay-scrim"></div>
+<div id="mobile-bar" class="mobile-only" style="display:none!important" hidden>
+  <button type="button" id="mob-left"><span>☰</span>Tree</button>
+  <button type="button" id="mob-script"><span>⌗</span>Script</button>
+  <button type="button" id="mob-scene"><span>▣</span>View</button>
+  <button type="button" id="mob-assets"><span>▨</span>Assets</button>
+  <button type="button" id="mob-right"><span>⚙</span>Props</button>
+</div>
+
+<!-- DEBUG PANEL (center bottom) -->
+<div id="debug-panel">
+  <div id="dbg-head">
+    <button class="icon-btn" id="dbg-toggle" data-tip="Toggle debug (Ctrl+J)">▲</button>
+    <b>Debug</b>
+    <span id="dbg-stats"></span>
+    <span style="flex:1"></span>
+    <span id="dbg-live" style="color:var(--accent-yellow);font-size:10px"></span>
+    <label class="vt-loop"><input type="checkbox" id="dbg-logs-only"> Logs only</label>
+    <button class="icon-btn" id="dbg-clear" data-tip="Clear">⌫</button>
+  </div>
+  <div id="dbg-body"></div>
+</div>
+
+<!-- OVERLAYS -->
+<div id="ctx-menu"></div>
+<div id="global-tip" role="tooltip"></div>
+<div id="toast"></div>
+<div id="settings-overlay"></div>
+
+
+<!-- NEW SCENE MODAL -->
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">New Scene</div>
+    <div class="modal-field">
+      <label>Scene Name</label>
+      <input id="scene-name-input" type="text" value="MainScene" placeholder="e.g. MainScene"/>
+    </div>
+    <div class="modal-field">
+      <label>Root Node</label>
+      <select id="scene-root-select">
+        <option value="Node2D">Node2D</option>
+        <option value="Sprite2D">Sprite2D</option>
+        <option value="Control">Control</option>
+        <option value="CharacterBody2D">CharacterBody2D</option>
+        <option value="TileMapLayer">TileMapLayer</option>
+        <option value="Camera2D">Camera2D</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="modal-create">Create</button>
+    </div>
+  </div>
+</div>
+
+<script src="src/js/core/app.js"></script>
+<script src="src/js/core/state.js"></script>
+<script src="src/js/core/block-defs.js"></script>
+<script src="src/js/core/utils.js"></script>
+<script src="src/js/ui/slots.js"></script>
+<script src="src/js/scene/scenes.js"></script>
+<script src="src/js/scene/tree.js"></script>
+<script src="src/js/ui/tabs.js"></script>
+<script src="src/js/editor/blocks/model.js"></script>
+<script src="src/js/library/blocks.js"></script>
+<script src="src/js/editor/blocks/inspector.js"></script>
+<script src="src/js/editor/blocks/tracks.js"></script>
+<script src="src/js/editor/blocks/canvas.js"></script>
+<script src="src/js/ui/inspector.js"></script>
+<script src="src/js/library/assets.js"></script>
+<script src="src/js/ui/search.js"></script>
+<script src="src/js/ui/context-menu.js"></script>
+<script src="src/js/ui/modal.js"></script>
+<script src="src/js/ui/code-view.js"></script>
+<script src="src/js/runtime/engine.js"></script>
+<script src="src/js/runtime/preview.js"></script>
+<script src="src/js/ui/debug.js"></script>
+<script src="src/js/ui/settings.js"></script>
+<script src="src/js/input/keybinds.js"></script>
+<script src="src/js/input/input.js"></script>
+<script src="src/js/ui/menus.js"></script>
+<script src="src/js/ui/gutters.js"></script>
+<script src="src/js/project/api-client.js"></script>
+<script src="src/js/project/lifecycle.js"></script>
+<script src="src/js/project/project-fs.js"></script>
+<script src="src/js/project/undo.js"></script>
+<script src="src/js/project/save-open.js"></script>
+<script src="src/js/project/drop-files.js"></script>
+<script src="src/js/ui/mobile.js"></script>
+<script src="src/js/art/art-state.js"></script>
+<script src="src/js/art/art-tools.js"></script>
+<script src="src/js/art/art-view.js"></script>
+<script src="src/js/art/art-export.js"></script>
+<script src="src/js/audio/audio-core.js"></script>
+<script src="src/js/audio/audio-sfx.js"></script>
+<script src="src/js/audio/audio-music.js"></script>
+<script src="src/js/audio/audio-view.js"></script>
+<script src="src/js/init.js"></script>
+</body>
+</html>

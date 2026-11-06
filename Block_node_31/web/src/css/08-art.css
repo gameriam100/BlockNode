@@ -1,0 +1,37 @@
+#art-pane{flex:1 1 0;min-width:0;display:none;overflow:hidden;background:var(--bg-deepest)}
+#canvas-panel[data-view=art] #script-pane,#canvas-panel[data-view=art] #preview-pane,#canvas-panel[data-view=art] #assets-pane{display:none}
+#canvas-panel[data-view=art] #art-pane{display:flex}
+/* Side panel ~2x wider; tools/icons ~2.5x larger */
+#art-side{
+  width:300px;flex:0 0 300px;background:var(--bg-panel);border-right:1px solid var(--border);
+  padding:10px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;overflow-x:hidden
+}
+#art-side h4{font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;letter-spacing:.04em}
+#art-side input[type=color]{width:100%;height:48px;border:1px solid var(--border);background:none;cursor:pointer;padding:0;border-radius:6px}
+.art-row{display:flex;flex-wrap:wrap;gap:6px}
+.art-btn{
+  background:var(--bg-panel);border:1px solid var(--border);color:inherit;border-radius:6px;
+  min-width:48px;height:48px;cursor:pointer;font-size:28px;
+  display:inline-flex;align-items:center;justify-content:center;line-height:1
+}
+#art-svg.no-grid{background-image:none}
+.art-select{background:var(--bg-panel);border:1px solid var(--border);color:inherit;border-radius:6px;height:40px;flex:1;min-width:0;font-size:13px}
+.art-btn:hover{filter:brightness(1.25)}
+.art-btn.on{border-color:#4a90d9;background:#2a3f5a}
+.art-btn.sw{width:36px;min-width:36px;height:36px;font-size:0}
+.art-color-hist{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}
+.art-color-hist .art-btn.sw{width:28px;min-width:28px;height:28px;border-radius:4px}
+#art-stage{flex:1;display:flex;flex-direction:column;min-width:0;user-select:none}
+#art-status{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text-muted);font-size:12px}
+#art-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;cursor:default}
+/* Grid drawn above the white fill so it stays visible over colors */
+#art-svg{
+  width:min(70vh,70%);aspect-ratio:1;background:#fff;
+  box-shadow:0 0 0 1px var(--border);cursor:crosshair;touch-action:none;shape-rendering:crispEdges;
+  position:relative
+}
+#art-svg:not(.no-grid)::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:5;
+  background-image:linear-gradient(#0003 1px,transparent 1px),linear-gradient(90deg,#0003 1px,transparent 1px);
+  background-size:calc(100%/var(--art-n,32)) calc(100%/var(--art-n,32));
+}

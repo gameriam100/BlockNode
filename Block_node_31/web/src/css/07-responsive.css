@@ -1,0 +1,185 @@
+/* ── MOBILE / RESPONSIVE ── */
+.mobile-only{display:none}
+#overlay-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:90;-webkit-tap-highlight-color:transparent}
+#overlay-scrim.show{display:block}
+
+@media (max-width:900px){
+  .desktop-only{display:none!important}
+  .mobile-only{display:flex}
+  body{font-size:14px;overflow:hidden;-webkit-text-size-adjust:100%}
+
+  /* Top bar */
+  #topbar{height:44px;padding:0 8px;gap:6px}
+  .run-btn{padding:8px 14px;font-size:13px;border-radius:8px;min-height:36px}
+  #topbar .icon-btn{width:36px;height:36px;font-size:16px}
+
+  /* Scene / view tabs — compact scrollable */
+  #tabs-wrap{overflow:hidden}
+  #tabs-wrap .canvas-tabs{min-height:40px;padding:0 6px;gap:2px;-webkit-overflow-scrolling:touch}
+  .canvas-tab{padding:8px 10px;font-size:12px;min-height:36px}
+  .canvas-tab .scene-x{opacity:1}
+  #view-tabs .vt-loop{display:none}
+
+  /* Main: full-width canvas, side panels as drawers */
+  #main{flex-direction:column;position:relative;flex:1;min-height:0}
+  #left-slot,#right-slot{
+    position:fixed;top:0;bottom:0;z-index:100;
+    width:min(88vw,340px)!important;
+    max-width:340px;
+    transition:transform .22s ease;
+    box-shadow:0 0 48px rgba(0,0,0,.55);
+    /* leave room for bottom nav + safe area */
+    padding-bottom:calc(56px + env(safe-area-inset-bottom,0px));
+  }
+  #left-slot{left:0;transform:translateX(-110%);border-right:1px solid var(--border)}
+  #right-slot{right:0;transform:translateX(110%);border-left:1px solid var(--border)}
+  #left-slot.open,#right-slot.open{transform:translateX(0)}
+  /* Drawer close affordance */
+  #left-slot::before,#right-slot::before{
+    content:'✕ Close';position:absolute;top:8px;right:10px;z-index:5;
+    font-size:12px;color:var(--text-secondary);background:var(--bg-panel-light);
+    border:1px solid var(--border);border-radius:8px;padding:6px 10px;
+    pointer-events:none;opacity:0;display:none
+  }
+  .gutter{display:none!important}
+
+  /* Canvas fills remaining space above mobile bar */
+  #canvas-panel{flex:1;width:100%;border:none;min-height:0}
+  #script-pane,#preview-pane,#assets-pane{min-width:0}
+
+  /* Script layout: library stacks above tracks on narrow screens */
+  #canvas-area{flex-direction:column!important}
+  #block-library{
+    width:100%!important;min-width:0!important;max-width:none!important;
+    flex:0 0 auto!important;height:42vh;max-height:42vh;min-height:160px;
+    border-right:none;border-bottom:1px solid var(--border);
+  }
+  #block-library.collapsed{
+    height:36px!important;max-height:36px!important;min-height:0!important;
+  }
+  #script-workspace{flex:1;min-height:0;padding:8px}
+  .bl-list{max-height:none}
+  .bl-header{padding:10px 12px}
+  .bl-title{font-size:13px;margin-bottom:8px}
+  .bl-search input{padding:10px 0;font-size:15px}
+  .bl-cat-head{padding:8px 10px;font-size:11px;min-height:32px}
+  .bl-cat-body{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:5px}
+  .bl-item{
+    padding:8px 4px;min-height:56px;border-radius:8px;margin:0;gap:4px
+  }
+  .bl-item .bi-icon{font-size:18px}
+  .bl-item .bi-name{font-size:11px;font-weight:600}
+  .sgroup{margin-bottom:8px}
+  .sgroup-head{min-height:44px;padding:10px 12px}
+  .sgroup-name{font-size:14px;padding:4px 6px}
+  .strack{min-height:56px;margin-bottom:6px}
+  .strack-label{width:84px}
+  .strack-lane{min-height:52px;padding:8px;gap:6px}
+  .tblock{height:48px;min-width:88px;padding:0 12px;border-radius:10px}
+  .tblock .tb-ico{font-size:16px}
+  .tblock .tb-name{font-size:14px}
+  .tblock .tb-x{display:flex;width:28px;height:28px;font-size:14px}
+  .add-track-btn,.add-group-btn{min-height:48px;font-size:14px;border-radius:10px}
+
+  /* Touch-friendly controls */
+  .icon-btn{width:36px;height:36px;font-size:15px;border-radius:8px}
+  .scene-item{padding:10px 12px;min-height:44px}
+  .inspector-row{padding:8px 12px;min-height:40px}
+  .inspector-val{width:88px;padding:6px 8px;font-size:13px;border-radius:6px}
+  .btn{padding:8px 14px;font-size:13px;border-radius:8px;min-height:36px}
+  .btn.sm{padding:6px 10px;min-height:32px}
+  .search input,.bl-search input{padding:8px 0;font-size:14px}
+  .search,.bl-search{border-radius:8px;padding:0 8px 0 10px}
+  input,select,button,textarea{-webkit-tap-highlight-color:transparent}
+
+  /* Debug: compact, above mobile bar */
+  #debug-panel{flex-shrink:0}
+  #dbg-head{height:32px;font-size:11px}
+  #debug-panel.open #dbg-body{height:min(28vh,160px)!important}
+
+  /* Bottom nav — safe area aware */
+  #mobile-bar{display:none!important;/* merged into top ribbon */
+    align-items:stretch;justify-content:space-around;
+    background:var(--bg-panel);border-top:1px solid var(--border);
+    flex-shrink:0;z-index:50;padding:4px 2px;
+    padding-bottom:max(4px,env(safe-area-inset-bottom,4px));
+    min-height:52px;
+  }
+  #mobile-bar button{
+    flex:1;background:transparent;border:none;color:var(--text-secondary);
+    font-size:10px;padding:6px 2px;border-radius:10px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    font-family:var(--font);min-height:48px;-webkit-tap-highlight-color:transparent
+  }
+  #mobile-bar button:active,#mobile-bar button.on{background:var(--bg-hover);color:var(--accent-teal)}
+  #mobile-bar button span{font-size:18px;line-height:1}
+
+  /* Modals full-ish width */
+  .modal{width:min(94vw,400px);max-height:85vh;border-radius:12px;padding:16px}
+  #settings-overlay .modal{width:min(96vw,460px);max-height:88vh}
+  .modal-field input,.modal-field select{padding:10px 12px;font-size:15px;border-radius:8px;min-height:44px}
+  .modal-actions .btn{min-height:44px;flex:1}
+
+  /* Context menu larger */
+  #ctx-menu{min-width:180px;border-radius:10px}
+  .ctx-item{padding:12px 16px;font-size:14px;min-height:44px}
+
+  /* Slot panels in drawers — fill full height */
+  .slot-panel-head{min-height:40px;padding:8px 10px}
+  .sp-title{font-size:13px}
+  #left-slot,#right-slot{display:flex;flex-direction:column}
+  #left-slot .slot-panel,#right-slot .slot-panel{flex:1;min-height:0;display:flex;flex-direction:column}
+  #left-slot .slot-body,#right-slot .slot-body{
+    height:auto!important;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch
+  }
+  #right-slot .slot-panel{flex:1 1 50%}
+  #scene-tree{flex:1;min-height:0}
+}
+
+/* Small phones */
+@media (max-width:600px){
+  #topbar{height:42px}
+  .run-btn{padding:6px 10px;font-size:12px}
+
+  /* Hide secondary scene tabs row clutter — keep view tabs */
+  #tabs-wrap #canvas-tabs{display:none}
+  #view-tabs{min-height:38px}
+
+  /* Split = vertical stack */
+  #canvas-panel[data-view=split]{flex-direction:column}
+  #canvas-panel[data-view=split] #script-pane{flex:1 1 0;min-height:200px;min-width:0;max-width:none}
+  #canvas-panel[data-view=split] #preview-pane{
+    flex:0 0 38vh;height:38vh;min-height:160px;max-height:45vh;
+    border-left:none;border-top:1px solid var(--border);min-width:0
+  }
+  #canvas-panel[data-view=split] .gutter.pv-gut{display:none}
+  #canvas-panel[data-view=scene] #preview-pane{min-height:0;flex:1 1 0;height:auto;max-height:none}
+  #canvas-panel[data-view=script] #script-pane{min-width:0;max-width:none}
+  #preview-pane{min-height:160px}
+
+  /* Library takes less vertical space on very small screens */
+  #block-library{height:38vh;max-height:38vh}
+  .strack-label{width:72px}
+  .strack-name{font-size:11px}
+  .strack-meta{font-size:9px}
+
+  /* Drawers almost full width */
+  #left-slot,#right-slot{width:min(92vw,360px)!important}
+
+  /* Toast above mobile bar */
+  #toast{bottom:calc(60px + env(safe-area-inset-bottom,0));font-size:13px;padding:8px 16px}
+}
+
+/* Very small / landscape phones */
+@media (max-width:400px){
+  #mobile-bar button{font-size:9px;padding:4px 1px}
+  #mobile-bar button span{font-size:16px}
+  .canvas-tab{padding:6px 8px;font-size:11px}
+  #block-library{height:38vh;max-height:38vh}
+}
+@media (max-height:480px) and (orientation:landscape){
+  #block-library{max-height:100%;width:40%!important;border-bottom:none;border-right:1px solid var(--border)}
+  #canvas-area{flex-direction:row!important}
+  #mobile-bar{min-height:44px}
+  #canvas-panel[data-view=split] #preview-pane{flex:0 0 50%;min-height:0}
+}
